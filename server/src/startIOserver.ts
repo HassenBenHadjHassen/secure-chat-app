@@ -1,6 +1,5 @@
 import socketIo from "socket.io";
 import http from "http";
-import crypto from "crypto";
 
 export const startIOserver = (
   server: http.Server<typeof http.IncomingMessage, typeof http.ServerResponse>

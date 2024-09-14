@@ -1,7 +1,6 @@
 import { useEffect, useState } from "react";
 import "./App.css";
 import io from "socket.io-client";
-// import CryptoJS from "crypto-js";
 
 const socket = io("http://192.168.1.11:4530");
 
@@ -10,6 +9,7 @@ function App() {
   const [inRoom, setInRoom] = useState(false);
   const [messages, setMessages] = useState<string[]>([]);
   const [message, setMessage] = useState<string>("");
+  const [username, setUsername] = useState<string>("");
 
   useEffect(() => {
     const handleRoomCreated = (code: string) => {
@@ -25,10 +25,12 @@ function App() {
     };
 
     const handleMessage = (encryptedMessage: string) => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        decryptMessage(encryptedMessage),
-      ]);
+      try {
+        const decryptedMessage = decryptMessage(encryptedMessage);
+        setMessages((prevMessages) => [...prevMessages, decryptedMessage]);
+      } catch (error) {
+        console.error("Failed to decrypt message:", error);
+      }
     };
 
     const handleInvalidRoom = () => {
@@ -40,7 +42,6 @@ function App() {
     socket.on("message", handleMessage);
     socket.on("invalid-room", handleInvalidRoom);
 
-    // Clean up listeners on component unmount
     return () => {
       socket.off("room-created", handleRoomCreated);
       socket.off("user-joined", handleUserJoined);
@@ -53,16 +54,31 @@ function App() {
     socket.emit("create-room");
   };
 
-  const joinRoom = () => {
-    socket.emit("join-room", roomCode);
+  const setUsernameFun = () => {
+    if (username.trim()) {
+      socket.emit("set-username", username);
+    } else {
+      alert("Please enter a valid Username");
+    }
+  };
 
-    setInRoom(true);
+  const joinRoom = () => {
+    if (roomCode.trim()) {
+      socket.emit("join-room", roomCode);
+      setInRoom(true);
+    } else {
+      alert("Please enter a valid room code");
+    }
   };
 
   const sendMessage = () => {
-    const encryptedMessage = encryptMessage(message);
-    socket.emit("message", roomCode, encryptedMessage);
-    setMessage("");
+    if (message.trim()) {
+      const encryptedMessage = encryptMessage(message);
+      socket.emit("message", roomCode, encryptedMessage);
+      setMessage("");
+    } else {
+      alert("Please enter a message");
+    }
   };
 
   const encryptMessage = (message: string) => {
@@ -91,6 +107,23 @@ function App() {
             }}
           />
           <button onClick={joinRoom}>Join Room</button>
+
+          <div>
+            <input
+              type="text"
+              placeholder="Enter Username"
+              value={username}
+              onChange={(e) => setUsername(e.target.value)}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  setUsernameFun();
+                }
+              }}
+            />
+
+            <button onClick={setUsernameFun}>Set Username</button>
+          </div>
         </div>
       ) : (
         <div>

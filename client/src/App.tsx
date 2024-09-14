@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import io from "socket.io-client";
 
@@ -10,6 +10,9 @@ function App() {
   const [messages, setMessages] = useState<string[]>([]);
   const [message, setMessage] = useState<string>("");
   const [username, setUsername] = useState<string>("");
+  const [typing, setTyping] = useState<string>("");
+
+  const typingTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
     const handleRoomCreated = (code: string) => {
@@ -37,15 +40,27 @@ function App() {
       alert("Invalid room code.");
     };
 
+    const handleUserTyping = (username: string) => {
+      setTyping(`${username} is typing...`);
+    };
+
+    const handleUserStoppedTyping = () => {
+      setTyping("");
+    };
+
     socket.on("room-created", handleRoomCreated);
     socket.on("user-joined", handleUserJoined);
     socket.on("message", handleMessage);
+    socket.on("user-typing", handleUserTyping);
+    socket.on("user-stopped-typing", handleUserStoppedTyping);
     socket.on("invalid-room", handleInvalidRoom);
 
     return () => {
       socket.off("room-created", handleRoomCreated);
       socket.off("user-joined", handleUserJoined);
       socket.off("message", handleMessage);
+      socket.off("user-typing", handleUserTyping);
+      socket.off("user-stopped-typing", handleUserStoppedTyping);
       socket.off("invalid-room", handleInvalidRoom);
     };
   }, []);
@@ -69,6 +84,20 @@ function App() {
     } else {
       alert("Please enter a valid room code");
     }
+  };
+
+  const onMessageChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    setMessage(e.target.value);
+
+    socket.emit("typing", roomCode);
+
+    if (typingTimeoutRef.current) {
+      clearTimeout(typingTimeoutRef.current);
+    }
+
+    typingTimeoutRef.current = setTimeout(() => {
+      socket.emit("stop-typing", roomCode);
+    }, 1000);
   };
 
   const sendMessage = () => {
@@ -130,14 +159,17 @@ function App() {
           <h2>Room Code: {roomCode}</h2>
           <div>
             {messages.map((msg, index) => (
-              <div key={index}>{msg}</div>
+              <div key={index}>
+                <span>{msg}</span>
+              </div>
             ))}
           </div>
+          <div>{typing && <span style={{ color: "gray" }}>{typing}</span>}</div>
           <input
             type="text"
             placeholder="Enter message"
             value={message}
-            onChange={(e) => setMessage(e.target.value)}
+            onChange={onMessageChange}
             onKeyDown={(e) => {
               if (e.key === "Enter") {
                 e.preventDefault();

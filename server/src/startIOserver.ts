@@ -23,7 +23,7 @@ export const startIOserver = (
     });
 
     socket.on("create-room", () => {
-      const roomCode = Math.floor(100000 + Math.random() * 900000).toString();;
+      const roomCode = Math.floor(100000 + Math.random() * 900000).toString();
       rooms[roomCode] = { users: [] };
       socket.join(roomCode);
       if (currentUsername) {
@@ -52,6 +52,16 @@ export const startIOserver = (
       const user = rooms[roomCode]?.users.find((user) => user.id === socket.id);
       const username = user ? user.username : "Unknown";
       io.to(roomCode).emit("message", `${username}: ${encryptedMessage}`);
+    });
+
+    socket.on("typing", (roomCode: string) => {
+      const username = currentUsername || "Anonymous";
+      socket.to(roomCode).emit("user-typing", username);
+    });
+
+    socket.on("stop-typing", (roomCode: string) => {
+      const username = currentUsername || "Anonymous";
+      socket.to(roomCode).emit("user-stopped-typing", username);
     });
 
     socket.on("disconnect", () => {

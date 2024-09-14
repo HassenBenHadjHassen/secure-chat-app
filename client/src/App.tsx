@@ -12,6 +12,8 @@ function App() {
   const [username, setUsername] = useState<string>("");
   const [typing, setTyping] = useState<string>("");
 
+  const [isFirstModalOpen, setIsFirstModalOpen] = useState(true);
+  const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
   const typingTimeoutRef = useRef<any>(null);
 
   useEffect(() => {
@@ -72,6 +74,7 @@ function App() {
   const setUsernameFun = () => {
     if (username.trim()) {
       socket.emit("set-username", username);
+      setIsSecondModalOpen(false);
     } else {
       alert("Please enter a valid Username");
     }
@@ -118,66 +121,112 @@ function App() {
     return encryptedMessage;
   };
 
+  const closeFirstModal = () => {
+    setIsFirstModalOpen(false);
+    setIsSecondModalOpen(true);
+  };
+
+  const continueAsAnonymous = () => {
+    setUsername("Anonymous");
+    setIsSecondModalOpen(false);
+  };
+
   return (
     <div className="App">
-      {!inRoom ? (
-        <div>
-          <button onClick={createRoom}>Create Room</button>
-          <input
-            type="text"
-            placeholder="Enter room code"
-            value={roomCode}
-            onChange={(e) => setRoomCode(e.target.value)}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                joinRoom();
-              }
-            }}
-          />
-          <button onClick={joinRoom}>Join Room</button>
+      {isFirstModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Welcome to the Chat App</h2>
+            <p>
+              This app allows you to create or join encrypted chat rooms. Enter
+              a room code or create a new room to start chatting securely!
+            </p>
+            <button onClick={closeFirstModal}>Get Started</button>
+          </div>
+        </div>
+      )}
 
-          <div>
+      {isSecondModalOpen && (
+        <div className="modal">
+          <div className="modal-content">
+            <h2>Set Your Username</h2>
             <input
+              className="input"
               type="text"
               placeholder="Enter Username"
               value={username}
               onChange={(e) => setUsername(e.target.value)}
+            />
+            <div>
+              <button onClick={setUsernameFun} className="btn">
+                Set Username
+              </button>
+              <button onClick={continueAsAnonymous} className="btn">
+                Continue as Anonymous
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      {!inRoom ? (
+        <div className="room-entry">
+          <h3 style={{ marginBottom: "10px" }}>Welcome {username}</h3>
+          <div className="spacing">
+            <span>Would you like to create a room?</span>
+            <button onClick={createRoom} className="btn">
+              Create Room
+            </button>
+          </div>
+          <div className="spacing">
+            <span>Or would you rather join one?</span>
+            <input
+              className="input"
+              type="text"
+              placeholder="Enter room code"
+              value={roomCode}
+              onChange={(e) => setRoomCode(e.target.value)}
               onKeyDown={(e) => {
                 if (e.key === "Enter") {
                   e.preventDefault();
-                  setUsernameFun();
+                  joinRoom();
                 }
               }}
             />
-
-            <button onClick={setUsernameFun}>Set Username</button>
+            <button onClick={joinRoom} className="btn">
+              Join Room
+            </button>
           </div>
         </div>
       ) : (
-        <div>
-          <h2>Room Code: {roomCode}</h2>
-          <div>
+        <div className="chat-room">
+          <h2 style={{marginBottom: "5px"}}>Room Code: {roomCode}</h2>
+          <div className="messages">
             {messages.map((msg, index) => (
-              <div key={index}>
+              <div key={index} className="message">
                 <span>{msg}</span>
               </div>
             ))}
           </div>
-          <div>{typing && <span style={{ color: "gray" }}>{typing}</span>}</div>
-          <input
-            type="text"
-            placeholder="Enter message"
-            value={message}
-            onChange={onMessageChange}
-            onKeyDown={(e) => {
-              if (e.key === "Enter") {
-                e.preventDefault();
-                sendMessage();
-              }
-            }}
-          />
-          <button onClick={sendMessage}>Send</button>
+          <div>{typing && <span className="typing">{typing}</span>}</div>
+          <div className="spacing">
+            <input
+              className="input"
+              type="text"
+              placeholder="Enter message"
+              value={message}
+              onChange={onMessageChange}
+              onKeyDown={(e) => {
+                if (e.key === "Enter") {
+                  e.preventDefault();
+                  sendMessage();
+                }
+              }}
+            />
+            <button onClick={sendMessage} className="btn">
+              Send
+            </button>
+          </div>
         </div>
       )}
     </div>

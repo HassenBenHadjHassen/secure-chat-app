@@ -24,7 +24,7 @@ export const startIOserver = (
     });
 
     socket.on("create-room", () => {
-      const roomCode = crypto.randomBytes(3).toString("hex");
+      const roomCode = Math.floor(100000 + Math.random() * 900000).toString();;
       rooms[roomCode] = { users: [] };
       socket.join(roomCode);
       if (currentUsername) {

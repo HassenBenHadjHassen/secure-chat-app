@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import io from "socket.io-client";
 
-const socket = io("http://192.168.1.11:4530");
+const socket = io(import.meta.env.VITE_BACKEND_SERVER);
 
 function App() {
   const [roomCode, setRoomCode] = useState<string>("");

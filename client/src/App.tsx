@@ -16,6 +16,16 @@ function App() {
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
   const typingTimeoutRef = useRef<any>(null);
 
+  const messagesEndRef = useRef<HTMLDivElement | null>(null);
+
+  const scrollToBottom = () => {
+    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  useEffect(() => {
+    scrollToBottom();
+  }, [messages]);
+
   useEffect(() => {
     const handleRoomCreated = (code: string) => {
       setRoomCode(code);
@@ -200,14 +210,16 @@ function App() {
         </div>
       ) : (
         <div className="chat-room">
-          <h2 style={{marginBottom: "5px"}}>Room Code: {roomCode}</h2>
+          <h2 style={{ marginBottom: "5px" }}>Room Code: {roomCode}</h2>
           <div className="messages">
             {messages.map((msg, index) => (
               <div key={index} className="message">
                 <span>{msg}</span>
               </div>
             ))}
+            <div ref={messagesEndRef} />
           </div>
+
           <div>{typing && <span className="typing">{typing}</span>}</div>
           <div className="spacing">
             <input

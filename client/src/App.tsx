@@ -212,11 +212,14 @@ function App() {
         <div className="chat-room">
           <h2 style={{ marginBottom: "5px" }}>Room Code: {roomCode}</h2>
           <div className="messages">
-            {messages.map((msg, index) => (
-              <div key={index} className="message">
-                <span>{msg}</span>
-              </div>
-            ))}
+            {messages
+              .slice()
+              .reverse()
+              .map((msg, index) => (
+                <div key={index} className="message">
+                  <span>{msg}</span>
+                </div>
+              ))}
             <div ref={messagesEndRef} />
           </div>
 

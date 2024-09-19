@@ -48,11 +48,20 @@ export const startIOserver = (
       }
     });
 
-    socket.on("message", (roomCode: string, encryptedMessage: string) => {
-      const user = rooms[roomCode]?.users.find((user) => user.id === socket.id);
-      const username = user ? user.username : "Unknown";
-      io.to(roomCode).emit("message", `${username}: ${encryptedMessage}`);
-    });
+    socket.on(
+      "message",
+      (roomCode: string, encryptedMessage: string) => {
+        const user = rooms[roomCode]?.users.find(
+          (user) => user.id === socket.id
+        );
+        const username = user ? user.username : "Unknown";
+
+        io.to(roomCode).emit("message", {
+          message: encryptedMessage,
+          sender: username,
+        });
+      }
+    );
 
     socket.on("typing", (roomCode: string) => {
       const username = currentUsername || "Anonymous";

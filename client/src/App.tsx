@@ -1,25 +1,41 @@
 import { useEffect, useRef, useState } from "react";
 import "./App.css";
 import io from "socket.io-client";
+import data from "@emoji-mart/data";
+import Picker from "@emoji-mart/react";
 
 const socket = io(import.meta.env.VITE_BACKEND_SERVER);
 
 function App() {
   const [roomCode, setRoomCode] = useState<string>("");
   const [inRoom, setInRoom] = useState(false);
-  const [messages, setMessages] = useState<string[]>([]);
+  const [messages, setMessages] = useState<{ text: string; sender: string }[]>(
+    []
+  );
   const [message, setMessage] = useState<string>("");
   const [username, setUsername] = useState<string>("");
   const [typing, setTyping] = useState<string>("");
 
   const [isFirstModalOpen, setIsFirstModalOpen] = useState(true);
   const [isSecondModalOpen, setIsSecondModalOpen] = useState(false);
+  const [showEmojiPicker, setShowEmojiPicker] = useState(false);
+
   const typingTimeoutRef = useRef<any>(null);
 
   const messagesEndRef = useRef<HTMLDivElement | null>(null);
 
   const scrollToBottom = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
+  };
+
+  const inputRef = useRef<HTMLInputElement>(null);
+
+  const addEmoji = (emoji: any) => {
+    setMessage(message + emoji.native);
+
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
   };
 
   useEffect(() => {
@@ -32,20 +48,23 @@ function App() {
       setInRoom(true);
     };
 
-    const handleUserJoined = (userId: string) => {
-      setMessages((prevMessages) => [
-        ...prevMessages,
-        `${userId} joined the room`,
-      ]);
-    };
-
-    const handleMessage = (encryptedMessage: string) => {
+    const handleMessage = (data: { message: string; sender: string }) => {
       try {
-        const decryptedMessage = decryptMessage(encryptedMessage);
-        setMessages((prevMessages) => [...prevMessages, decryptedMessage]);
+        const decryptedMessage = decryptMessage(data.message);
+        setMessages((prevMessages) => [
+          ...prevMessages,
+          { text: decryptedMessage, sender: data.sender },
+        ]);
       } catch (error) {
         console.error("Failed to decrypt message:", error);
       }
+    };
+
+    const handleUserJoined = (userId: string) => {
+      setMessages((prevMessages) => [
+        ...prevMessages,
+        { text: `${userId} joined the room`, sender: "system" },
+      ]);
     };
 
     const handleInvalidRoom = () => {
@@ -61,16 +80,16 @@ function App() {
     };
 
     socket.on("room-created", handleRoomCreated);
-    socket.on("user-joined", handleUserJoined);
     socket.on("message", handleMessage);
+    socket.on("user-joined", handleUserJoined);
     socket.on("user-typing", handleUserTyping);
     socket.on("user-stopped-typing", handleUserStoppedTyping);
     socket.on("invalid-room", handleInvalidRoom);
 
     return () => {
       socket.off("room-created", handleRoomCreated);
-      socket.off("user-joined", handleUserJoined);
       socket.off("message", handleMessage);
+      socket.off("user-joined", handleUserJoined);
       socket.off("user-typing", handleUserTyping);
       socket.off("user-stopped-typing", handleUserStoppedTyping);
       socket.off("invalid-room", handleInvalidRoom);
@@ -116,7 +135,9 @@ function App() {
   const sendMessage = () => {
     if (message.trim()) {
       const encryptedMessage = encryptMessage(message);
+
       socket.emit("message", roomCode, encryptedMessage);
+
       setMessage("");
     } else {
       alert("Please enter a message");
@@ -210,14 +231,19 @@ function App() {
         </div>
       ) : (
         <div className="chat-room">
-          <h2 style={{ marginBottom: "5px" }}>Room Code: {roomCode}</h2>
+          <h2 style={{ textAlign: "center" }}>Room Code: {roomCode}</h2>
           <div className="messages">
             {messages
               .slice()
               .reverse()
               .map((msg, index) => (
-                <div key={index} className="message">
-                  <span>{msg}</span>
+                <div
+                  key={index}
+                  className={`message ${
+                    msg.sender === username ? "outgoing" : "incoming"
+                  }`}
+                >
+                  <span>{msg.text}</span>
                 </div>
               ))}
             <div ref={messagesEndRef} />
@@ -225,19 +251,35 @@ function App() {
 
           <div>{typing && <span className="typing">{typing}</span>}</div>
           <div className="spacing">
-            <input
-              className="input"
-              type="text"
-              placeholder="Enter message"
-              value={message}
-              onChange={onMessageChange}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  sendMessage();
-                }
-              }}
-            />
+            <div className="room-input">
+              <input
+                ref={inputRef}
+                className="input"
+                type="text"
+                placeholder="Enter message"
+                value={message}
+                onChange={onMessageChange}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    sendMessage();
+                  }
+                }}
+              />
+              <button
+                className="emoji-button"
+                onClick={() => setShowEmojiPicker(!showEmojiPicker)}
+              >
+                😊
+              </button>
+
+              {showEmojiPicker && (
+                <div className="emoji-picker">
+                  <Picker data={data} onEmojiSelect={addEmoji} />
+                </div>
+              )}
+            </div>
+
             <button onClick={sendMessage} className="btn">
               Send
             </button>

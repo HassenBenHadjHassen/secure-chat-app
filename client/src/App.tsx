@@ -22,12 +22,6 @@ function App() {
 
   const typingTimeoutRef = useRef<any>(null);
 
-  const messagesEndRef = useRef<HTMLDivElement | null>(null);
-
-  const scrollToBottom = () => {
-    messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
-  };
-
   const inputRef = useRef<HTMLInputElement>(null);
 
   const addEmoji = (emoji: any) => {
@@ -37,10 +31,6 @@ function App() {
       inputRef.current.focus();
     }
   };
-
-  useEffect(() => {
-    scrollToBottom();
-  }, [messages]);
 
   useEffect(() => {
     const handleRoomCreated = (code: string) => {
@@ -281,7 +271,6 @@ function App() {
                   </div>
                 </div>
               ))}
-            <div ref={messagesEndRef} />
           </div>
 
           <div>{typing && <span className="typing">{typing}</span>}</div>

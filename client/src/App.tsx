@@ -162,6 +162,10 @@ function App() {
     setIsSecondModalOpen(false);
   };
 
+  const onChangeUserNameClick = () => {
+    setIsSecondModalOpen(true);
+  };
+
   return (
     <div className="App">
       {isFirstModalOpen && (
@@ -171,6 +175,11 @@ function App() {
             <p>
               This app allows you to create or join encrypted chat rooms. Enter
               a room code or create a new room to start chatting securely!
+            </p>
+
+            <p>
+              All chats are client-side and are automatically deleted upon
+              closing or refreshing the browser tab.
             </p>
             <button onClick={closeFirstModal}>Get Started</button>
           </div>
@@ -202,31 +211,42 @@ function App() {
 
       {!inRoom ? (
         <div className="room-entry">
-          <h3 style={{ marginBottom: "10px" }}>Welcome {username}</h3>
-          <div className="spacing">
-            <span>Would you like to create a room?</span>
-            <button onClick={createRoom} className="btn">
+          <div className="username">
+            <h3>Welcome, {username}</h3>
+            <img
+              src="https://www.svgrepo.com/download/436186/edit-tool-pencil.svg"
+              alt="edit username"
+              onClick={onChangeUserNameClick}
+            />
+          </div>
+          <div className="action-group">
+            <span className="prompt-text">
+              Would you like to create a room?
+            </span>
+            <button onClick={createRoom} className="btn primary-btn">
               Create Room
             </button>
           </div>
-          <div className="spacing">
-            <span>Or would you rather join one?</span>
-            <input
-              className="input"
-              type="text"
-              placeholder="Enter room code"
-              value={roomCode}
-              onChange={(e) => setRoomCode(e.target.value)}
-              onKeyDown={(e) => {
-                if (e.key === "Enter") {
-                  e.preventDefault();
-                  joinRoom();
-                }
-              }}
-            />
-            <button onClick={joinRoom} className="btn">
-              Join Room
-            </button>
+          <div className="action-group">
+            <span className="prompt-text">Or would you rather join one?</span>
+            <div className="input-wrapper">
+              <input
+                className="input room-input"
+                type="text"
+                placeholder="Enter room code"
+                value={roomCode}
+                onChange={(e) => setRoomCode(e.target.value)}
+                onKeyDown={(e) => {
+                  if (e.key === "Enter") {
+                    e.preventDefault();
+                    joinRoom();
+                  }
+                }}
+              />
+              <button onClick={joinRoom} className="btn secondary-btn">
+                Join Room
+              </button>
+            </div>
           </div>
         </div>
       ) : (
@@ -239,11 +259,26 @@ function App() {
               .map((msg, index) => (
                 <div
                   key={index}
-                  className={`message ${
+                  className={`message-container ${
                     msg.sender === username ? "outgoing" : "incoming"
                   }`}
                 >
-                  <span>{msg.text}</span>
+                  <span
+                    className={`sender-name ${
+                      msg.sender === username
+                        ? "outgoing-name"
+                        : "incoming-name"
+                    }`}
+                  >
+                    {msg.sender}
+                  </span>
+                  <div
+                    className={`message ${
+                      msg.sender === username ? "outgoing" : "incoming"
+                    }`}
+                  >
+                    <span>{msg.text}</span>
+                  </div>
                 </div>
               ))}
             <div ref={messagesEndRef} />
